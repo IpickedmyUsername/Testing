@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Jesus Clicker</title>
+
+    <!-- IMPORTANT FOR MOBILE -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(to bottom, #87CEEB, #f7f7f7);
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 32px;
+            margin: 15px 0;
+        }
+
+        .stats {
+            font-size: 20px;
+            margin: 5px;
+        }
+
+        /* CROSS BUTTON */
+        .cross {
+            font-size: 100px;
+            margin: 20px auto;
+            display: block;
+            cursor: pointer;
+            transition: transform 0.1s;
+            user-select: none;
+        }
+
+        .cross:active {
+            transform: scale(0.9);
+        }
+
+        /* UPGRADES SECTION */
+        .upgrades-container {
+            padding: 10px;
+        }
+
+        .upgrade {
+            width: 95%;
+            max-width: 500px;
+            padding: 18px;
+            margin: 10px auto;
+            border-radius: 12px;
+            border: none;
+            font-size: 18px;
+            text-align: left;
+            white-space: pre-line;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+        .affordable {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .unaffordable {
+            background: #777;
+            color: white;
+        }
+
+        /* CLICK POPUP */
+        .popup {
+            position: absolute;
+            font-size: 18px;
+            color: gold;
+            animation: floatUp 1s ease-out forwards;
+            pointer-events: none;
+        }
+
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-50px); }
+        }
+    </style>
+</head>
+
+<body>
+
+<h1>✝️ Jesus Clicker ✝️</h1>
+
+<div class="stats">Faith: <span id="faith">0</span></div>
+<div class="stats">Faith per second: <span id="fps">0</span></div>
+
+<div class="cross" onclick="gainFaith(event)">✝️</div>
+
+<div class="upgrades-container">
+    <h2>Upgrades</h2>
+    <div id="upgrades"></div>
+</div>
+
+<script>
+let faith = 0;
+let perSecond = 0;
+
+let upgrades = [
+    { name: "📖 Bible Study", cost: 10, power: 1, owned: 0 },
+    { name: "⛪ Church Gathering", cost: 50, power: 5, owned: 0 },
+    { name: "🙏 Prayer Group", cost: 150, power: 10, owned: 0 },
+    { name: "✈️ Mission Trip", cost: 500, power: 25, owned: 0 },
+    { name: "👼 Angel Guidance", cost: 1200, power: 60, owned: 0 },
+    { name: "📣 Evangelism", cost: 3000, power: 150, owned: 0 },
+    { name: "🏛️ Cathedral", cost: 8000, power: 400, owned: 0 },
+    { name: "🌍 Global Ministry", cost: 20000, power: 1000, owned: 0 }
+];
+
+// CLICK
+function gainFaith(e) {
+    faith++;
+
+    let x = e.touches ? e.touches[0].clientX : e.clientX;
+    let y = e.touches ? e.touches[0].clientY : e.clientY;
+
+    let popup = document.createElement("div");
+    popup.className = "popup";
+    popup.innerText = "+1";
+
+    popup.style.left = x + "px";
+    popup.style.top = y + "px";
+
+    document.body.appendChild(popup);
+    setTimeout(() => popup.remove(), 1000);
+
+    updateDisplay();
+}
+
+// BUY
+function buyUpgrade(i) {
+    let u = upgrades[i];
+
+    if (faith >= u.cost && isUnlocked(i)) {
+        faith -= u.cost;
+        perSecond += u.power;
+        u.owned++;
+        u.cost = Math.floor(u.cost * 1.5);
+
+        renderUpgrades();
+        updateDisplay();
+        saveGame();
+    }
+}
+
+// UNLOCK RULE
+function isUnlocked(i) {
+    if (i < 2) return true;
+    return upgrades[i - 2].owned > 0;
+}
+
+// DISPLAY
+function updateDisplay() {
+    document.getElementById("faith").innerText = Math.floor(faith);
+    document.getElementById("fps").innerText = perSecond + " / sec";
+}
+
+// RENDER
+function renderUpgrades() {
+    let container = document.getElementById("upgrades");
+    container.innerHTML = "";
+
+    upgrades.forEach((u, i) => {
+        if (!isUnlocked(i)) return;
+
+        let btn = document.createElement("button");
+        btn.className = "upgrade";
+
+        if (faith >= u.cost) {
+            btn.classList.add("affordable");
+        } else {
+            btn.classList.add("unaffordable");
+        }
+
+        btn.onclick = () => buyUpgrade(i);
+
+        btn.innerText =
+`${u.name}
+Owned: ${u.owned}
++${u.power}/sec
+Cost: ${u.cost}`;
+
+        container.appendChild(btn);
+    });
+}
+
+// PASSIVE
+setInterval(() => {
+    faith += perSecond;
+    updateDisplay();
+    renderUpgrades();
+}, 1000);
+
+// SAVE
+function saveGame() {
+    localStorage.setItem("jesusClickerSave", JSON.stringify({
+        faith,
+        perSecond,
+        upgrades
+    }));
+}
+
+// LOAD
+function loadGame() {
+    let save = JSON.parse(localStorage.getItem("jesusClickerSave"));
+    if (save) {
+        faith = save.faith;
+        perSecond = save.perSecond;
+        upgrades = save.upgrades;
+    }
+}
+
+// AUTO SAVE
+setInterval(saveGame, 5000);
+
+// START
+loadGame();
+renderUpgrades();
+updateDisplay();
+
+</script>
+
+</body>
+</html>
